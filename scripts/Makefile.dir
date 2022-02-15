@@ -1,0 +1,38 @@
+# -*- mode: makefile -*-
+
+blank :=
+define newline
+
+$(blank)
+endef
+
+define MAKE_template =
+$(1):
+	$$(foreach dir,$$(DIRS),@+$(MAKE) --no-print-directory -C $$(dir) $(1)$$(newline))
+endef
+
+COMMANDS=verify extract depend hidden clean cleanhints cleanchecked cleandepend cleanhidden cleanextract distclean
+ifeq (t,$(TOPLEVEL))
+undefine TOPLEVEL
+else
+COMMANDS+=all
+endif
+
+$(foreach cmd,$(COMMANDS),$(eval $(call MAKE_template,$(cmd))))
+
+build-%:
+	@echo "\033[1m[BUILD]\033[0m $*"
+	@OCAMLPATH=$(FSTAR_HOME)/bin ocamlbuild -cflags "-w -8-11-20-21-26" -use-ocamlfind -pkgs 'fstarlib' $*
+
+cleanbuild:
+	rm -rf _build
+
+### Special targets
+.PHONY: $(COMMANDS) FORCE $(DIRS)
+FORCE:
+
+# Perform checks for OSX
+ifeq (3.81,$(MAKE_VERSION))
+$(error You seem to be using the OSX antiquated Make version. Hint: brew \
+		install make, then invoke gmake instead of make)
+endif

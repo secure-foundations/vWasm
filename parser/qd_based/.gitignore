@@ -1,0 +1,4 @@
+*.fst
+*.fsti
+*.rfc
+.gen

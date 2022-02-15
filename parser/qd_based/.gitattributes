@@ -1,0 +1,7 @@
+# Prevent diffing auto-generated files
+*.fst binary
+*.fsti binary
+*.ml binary
+*.hints binary
+*.checked binary
+*.rfc binary

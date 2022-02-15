@@ -1,0 +1,117 @@
+# -*- mode: makefile -*-
+
+FSTAR:=fstar.exe
+FSTAR_ARGS:=$(shell \
+	"$(shell git rev-parse --show-toplevel)"/scripts/parse_fstar_args.sh)
+FSTAR_ADDITIONAL_ARGS+=--use_hints
+FSTAR_ADDITIONAL_ARGS+=--record_hints
+FSTAR_ADDITIONAL_ARGS+=--cache_checked_modules
+
+ADMIT_SMT_QUERIES?=false
+ifeq "$(ADMIT_SMT_QUERIES)" "t"
+FSTAR_ADDITIONAL_ARGS+=--admit_smt_queries true
+endif
+
+FSTs:=$(wildcard *.fst)
+FSTIs:=$(wildcard *.fsti)
+
+VERIs:=$(subst .fsti,.fsti.checked,$(FSTIs))
+VERs:=$(subst .fst,.fst.checked,$(FSTs))
+
+MLs:=$(subst _fst,.ml,$(subst .,_,$(FSTs)))
+
+HINTIs:=$(subst .fsti,.fsti.hints,$(FSTIs))
+HINTs:=$(subst .fst,.fst.hints,$(FSTs))
+
+all: depend hidden verify
+
+verify: $(VERIs) $(VERs)
+
+extract: $(MLs)
+
+depend: .depend
+
+.depend: $(FSTIs) $(FSTs)
+	@$(FSTAR) $(FSTAR_ARGS) $(FSTAR_ADDITIONAL_ARGS) --warn_error -321 --dep full $^ > .depend
+
+hidden:
+	@printf '%s\n' $(VERIs) $(VERs) $(HINTIs) $(HINTs) > .hidden
+
+clean:
+	rm -f *~
+
+cleanchecked:
+ifneq "$(DONTVERIFY)" "t"
+	rm -f *.checked
+else
+	@echo "Not cleaning checked files in $(shell basename $(shell pwd))"
+endif
+
+cleanhints:
+ifneq "$(DONTVERIFY)" "t"
+	rm -f *.hints
+else
+	@echo "Not cleaning hints in $(shell basename $(shell pwd))"
+endif
+
+cleandepend:
+	rm -f .depend
+
+cleanhidden:
+	rm -f .hidden
+
+cleanextract:
+ifneq "$(DONTEXTRACT)" "t"
+	rm -f *.ml
+else
+	@echo "Not cleaning ml files in $(shell basename $(shell pwd))"
+endif
+
+distclean: clean cleanchecked cleandepend cleanhidden cleanextract
+
+# Directories may define DONTVERIFY/DONTEXTRACT as "t" to prevent
+# verification/extraction in that directory. Useful for dependencies
+# that are already verified/extracted, or for directories that have
+# slow verification/extraction.
+define FSTAR_template =
+$(1).checked: $(1)
+ifneq "$(DONTVERIFY)" "t"
+	@echo "\033[1m[VER]\033[0m $$<"
+	@$$(FSTAR) $$(FSTAR_ARGS) $$(FSTAR_ADDITIONAL_ARGS) $$<
+	@if [ -f "$$@" ]; then touch $$@; fi
+else
+ifneq "$(DONTPRINTSKIP)" "t"
+	@echo "\033[1m[SKIP-VER]\033[0m $$<"
+endif
+endif
+
+$(subst _fst,.ml,$(subst .,_,$(1))): $(1)
+ifneq "$(DONTEXTRACT)" "t"
+	@echo "\033[1m[EXTRACT]\033[0m $$@"
+	@$$(FSTAR) $$(FSTAR_ARGS) $$(FSTAR_ADDITIONAL_ARGS) --admit_smt_queries true --codegen OCaml $$(notdir $$<) --extract_module $$(notdir $$(basename $$<)) >/dev/null
+	@if [ -f "$$@" ]; then touch $$@; else echo "\033[1m\033[31m[FAIL]\033[0m Unable to extract $$@"; false; fi
+else
+ifneq "$(DONTPRINTSKIP)" "t"
+	@echo "\033[1m[SKIP-EXTRACT]\033[0m $$@"
+endif
+endif
+endef
+
+$(foreach f,$(FSTs) $(FSTIs),$(eval $(call FSTAR_template,$(f))))
+
+### Use dependency ordering, but keep in mind that we're still waiting for
+### https://github.com/FStarLang/FStar/issues/1587 to be fixed
+-include .depend
+
+### Special targets
+.PHONY: all verify FORCE extract depend hidden clean cleanchecked cleanhints cleandepend cleanhidden cleanextract distclean
+FORCE:
+
+### Prevent intermediaries from being deleted
+.SECONDARY: $(VERs) $(VERIs) $(HINTs) $(HINTIs) $(MLs)
+
+# Perform checks for OSX
+ifeq (3.81,$(MAKE_VERSION))
+$(error You seem to be using the OSX antiquated Make version. Hint: brew \
+		install make, then invoke gmake instead of make)
+endif

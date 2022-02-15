@@ -1,0 +1,4 @@
+true: include,debug
+"wasi-integration": -traverse,-include
+"wasm-semantics-fuzz": -traverse,-include
+<working-dir*>: -traverse,-include

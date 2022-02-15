@@ -1,0 +1,2 @@
+# Re-enable diffing
+main.ml diff merge text

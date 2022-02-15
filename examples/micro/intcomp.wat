@@ -1,0 +1,13 @@
+(module
+  (func (result i64)
+    (i32.const 10)
+    (i32.const 20)
+    (i32.gt_s)
+    (drop)
+    (i64.const 101)
+    (i64.const 202)
+    (i64.le_u)
+    (drop)
+    (i64.const 10)
+  )
+)

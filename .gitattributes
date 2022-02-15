@@ -1,0 +1,12 @@
+# Prevent textual diffing of generated/binary files
+*.hints binary 
+*.checked binary
+*.ml binary
+*.wasm binary
+*.vasm binary
+
+# Linguist
+*.fst linguist-language=FStar
+*.fst linguist-documentation=false
+*.fsti linguist-language=FStar
+*.fsti linguist-documentation=false

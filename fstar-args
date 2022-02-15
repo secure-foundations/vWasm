@@ -1,0 +1,50 @@
+# Include all common modules
+--include common/
+
+# Include all semantics directories
+--include semantics/defs/
+--include semantics/wasm/
+--include semantics/wasm_simple/
+--include semantics/common/
+--include semantics/i1/
+--include semantics/i2/
+--include semantics/printer/
+--include semantics/temp/	# Temporary; stuff in here is going to
+				# be refactored in hacl-star repo
+				# sometime soon, so it will be
+				# removed/moved
+
+# Include all parser directories
+--include parser/qd_based/
+--include parser/src/
+
+# Include all compiler phases
+--include compiler/common/
+--include compiler/wasm-to-wasm_simple/
+--include compiler/wasm_simple-to-i1/
+--include compiler/i1-to-i2/
+--include compiler/opt/
+--include compiler/sandbox/
+--include compiler/linearizer/
+--include compiler/doall/
+
+# Include dependencies
+--include dependencies/lowparse
+--include dependencies/kremlib
+
+# Stop warnings on
+# - 333: Unable to open hints file
+# - 241: Unable to load checked file of a dependency
+# - 331: Name in type being ignored (eg: `(x:foo)` doesn't need `x` to be named)
+# - 290: SMT may not be able to prove the types equal
+--warn_error -333
+--warn_error -241
+--warn_error -331
+--warn_error -290
+
+# Options to speed up proofs
+#   - Disable nonlinear arithmetic
+#   - Set defaults for fuel/ifuel to be lower than normal
+--z3cliopt smt.arith.nl=false
+--fuel 1
+--ifuel 1

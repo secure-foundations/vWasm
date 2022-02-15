@@ -1,0 +1,10 @@
+SRCS=$(wildcard *.wat)
+OUTS=$(SRCS:.wat=.vasm)
+
+all: $(OUTS)
+
+%.vasm: %.wat
+	wat2vasm $< -o $@
+
+clean:
+	rm -rf *.vasm
